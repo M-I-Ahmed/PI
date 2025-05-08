@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
 import { Button } from '@/components/ui/button'
 import { User as UserIcon } from 'lucide-react'
-import MessageLog from '@/components/ui/message-log'
+//import MessageLog from '@/components/ui/message-log'
 
 const AssetColumn = ({
   title,
@@ -43,10 +43,11 @@ const DrillingCellColumn = ({ id }: { id: string }) => (
   </div>
 )
 
-const MetricTile = ({ label }: { label: string }) => (
-  <div className="flex items-center justify-center text-white font-semibold text-sm text-center p-4 border border-cyan-500 rounded-xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] shadow hover:shadow-lg transition-all">
-    {label}
-  </div>
+const MetricTile = ({ label,value }: { label: string; value: string }) => (
+  <div className="flex flex-col items-center justify-center text-white font-semibold text-sm text-center p-4 rounded-xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] shadow hover:shadow-lg transition-all hover:scale-[1.01]">
+  <div>{label}</div>
+  {value && <div className="text-cyan-400 text-xl mt-2">{value}</div>}
+</div>
 );
 
 export default function Header() {
@@ -56,6 +57,13 @@ export default function Header() {
     <main className="min-h-screen bg-gray-900 transition-colors">
       <header className="flex items-center justify-between mb-6 p-6 bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-2xl shadow-md">
         <h1 className="text-2xl font-semibold tracking-wide">Process Intelligence</h1>
+
+        {/* Div for status indicator */}
+        <div>
+
+        </div>
+
+
         <Popover>
           <PopoverTrigger asChild>
             <Button
@@ -92,23 +100,64 @@ export default function Header() {
             <AssetColumn
               title="Robot"
               imageSrc="/robots/fanuc-m2000.png"
-              contentBottom="# Robot Name"
+              contentBottom="# Robot ID"
             />
             <AssetColumn
               title="End Effector"
-              imageSrc="/robots/abb.png"
-              contentBottom="# End Effector Name"
+              //imageSrc="/robots/abb.png"
+              contentBottom="# End Effector ID"
             />
           </div>
           <div className="flex-[0.25]">
             <AssetColumn
               title="In-Process Part"
-              imageSrc="/plane.png"
+              //imageSrc="/plane.png"
               contentBottom="# Part ID"
             />
           </div>
         </div>
       </section>
+
+
+      {/* Row 2 */}
+      <section className='flex gap-4 px-6 py-4'>
+        {/*Div for current process section */}
+        <div className="bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl p-9 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all w-2xs">
+            <h2 className="text-lg font-semibold mb-4 text-white">Current Process</h2>
+            <ul className="space-y-1 text-sm text-gray-300">
+              <li><strong className="text-white">Process Type:</strong> —</li>
+              <li><strong className="text-white">Hole ID:</strong> —</li>
+              <li><strong className="text-white">Feed Rate:</strong> —</li>
+              <li><strong className="text-white">Spindle Speed:</strong> —</li>
+              <li><strong className="text-white">Part ID:</strong> —</li>
+              <li><strong className="text-white">Material Stack:</strong> —</li>
+            </ul>
+        </div>
+
+
+        {/*Div for 4 tiles */}
+        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4 mb-4 h-90">
+          <div className="grid grid-cols-2 gap-4 w-full">
+            <MetricTile label="Cycles to Next Drill Bit Change" value="3" />
+            <MetricTile label="No. of Cycles Completed" value='100' />
+            <MetricTile label="Hole Success Rate (Dial)" value='20' />
+            <MetricTile label="Holes Drilled in Last Hour" value='10' />
+          </div>
+        </div>
+
+        {/* Div for message log section*/}
+        <div>
+          
+        </div>
+
+
+
+
+
+      </section>
+
+
+
     </main>
   )
 }
