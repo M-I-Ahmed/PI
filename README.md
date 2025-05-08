@@ -52,5 +52,5 @@ CELL STATUS TAB:
     - Fault
 
 MESSAGE LOG:
-- Log of the cells events
+- Log of the cells events .
 
