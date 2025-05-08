@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
 import { Button } from '@/components/ui/button'
-import { User as UserIcon } from 'lucide-react'
+import { User as UserIcon, CheckCircle, Loader2, AlertTriangle } from 'lucide-react'
 //import MessageLog from '@/components/ui/message-log'
 
 const AssetColumn = ({
@@ -43,6 +43,32 @@ const DrillingCellColumn = ({ id }: { id: string }) => (
   </div>
 )
 
+const CellStatus = ({ status }: { status: 'ready' | 'drilling' | 'fault' }) => {
+  let bgClass = 'bg-gray-700';
+  let IconComponent = CheckCircle;
+  let iconClass = 'text-white';
+  if (status === 'ready') {
+    bgClass = 'bg-green-600';
+    IconComponent = CheckCircle;
+    iconClass = 'text-white';
+  } else if (status === 'drilling') {
+    bgClass = 'bg-blue-600';
+    IconComponent = Loader2;
+    iconClass = 'text-white animate-spin';
+  } else if (status === 'fault') {
+    bgClass = 'bg-red-600';
+    IconComponent = AlertTriangle;
+    iconClass = 'text-white';
+  }
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className={`inline-flex items-center px-4 py-2 rounded-2xl shadow-lg transition ${bgClass}`}>        
+        <IconComponent className={`mr-2 h-5 w-5 ${iconClass}`} />
+        <span className="text-white font-semibold uppercase">{status}</span>
+      </div>
+    </div>
+  )
+}
 
 const MessageCard = ({message, timestamp}: {message: string; timestamp: string}) => (
   <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-4 shadow hover:shadow-lg transition mr-9">
@@ -158,6 +184,14 @@ export default function Header() {
         </div>
 
         {/* Div for Cell status indicator */}
+        <div className=' flex-[1] flex-col bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl pl-9 pt-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all  '>
+          <h2>cell status</h2>
+        </div>
+
+        <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all p-4">
+          <h2 className="text-lg font-semibold mb-4 text-white text-center">Cell Status</h2>
+          <CellStatus status="fault"/>
+        </div>
  
 
         {/* Div for message log section*/}
