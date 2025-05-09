@@ -51,7 +51,7 @@ const CellStatus = ({ status }: { status: 'ready' | 'drilling' | 'fault' }) => {
     bgClass = 'bg-green-600';
     IconComponent = CheckCircle;
     iconClass = 'text-white';
-  } else if (status === 'drilling') {
+  } else if (status === 'Drilling in progress') {
     bgClass = 'bg-blue-600';
     IconComponent = Loader2;
     iconClass = 'text-white animate-spin';
@@ -74,7 +74,7 @@ const MessageCard = ({message, timestamp}: {message: string; timestamp: string})
   <div className="bg-gray-800 border border-gray-700 rounded-xl p-4 mb-4 shadow hover:shadow-lg transition mr-9">
     <div className="flex justify-between items-center mb-2">
       <div className="flex items-center gap-2 text-sm text-white font-semibold">
-        <div className="w-2 h-2 rounded-full bg-yellow-400"></div>
+        <div className="w-2 h-2 rounded-full bg-cyan-400"></div>
         {message}
       </div>
       <div className="text-xs text-gray-400">{timestamp}</div>
@@ -99,9 +99,20 @@ export default function Header() {
         <h1 className="text-2xl font-semibold tracking-wide">Process Intelligence</h1>
 
         {/* Div for status indicator */}
-        <div>
-
+      
+        <div className='flex-row'>
+          <div className='flex items-right justify-right pl-210'>
+          <h2 className="text-lg font-semibold pr-5 pt-2 text-white text-center">Cell Status</h2>
+          <CellStatus status="fault"/>
+          </div>
         </div>
+ 
+        {/* <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all p-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-white">Cell Status</h2>
+            <CellStatus status='ready' />
+          </div>
+        </div> */}
 
 
         <Popover>
@@ -184,15 +195,8 @@ export default function Header() {
         </div>
 
         {/* Div for Cell status indicator */}
-        <div className=' flex-[1] flex-col bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl pl-9 pt-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all  '>
-          <h2>cell status</h2>
-        </div>
 
-        <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all p-4">
-          <h2 className="text-lg font-semibold mb-4 text-white text-center">Cell Status</h2>
-          <CellStatus status="fault"/>
-        </div>
- 
+
 
         {/* Div for message log section*/}
         <div className='flex-[2] flex-col bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl pl-9 pt-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all'>
