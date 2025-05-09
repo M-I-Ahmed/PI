@@ -95,15 +95,15 @@ export default function Header() {
 
   return (
     <main className="min-h-screen bg-gray-900 transition-colors">
-      <header className="flex items-center justify-between mb-6 p-6 bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-2xl shadow-md">
+      <header className="flex items-center justify-between mx-4 mb-2 p-6 bg-gradient-to-br from-gray-800 to-gray-900 text-white rounded-2xl shadow-md">
         <h1 className="text-2xl font-semibold tracking-wide">Process Intelligence</h1>
 
         {/* Div for status indicator */}
       
         <div className='flex-row'>
-          <div className='flex items-right justify-right pl-210'>
+          <div className='flex items-right justify-right pl-200'>
           <h2 className="text-lg font-semibold pr-5 pt-2 text-white text-center">Cell Status</h2>
-          <CellStatus status="fault"/>
+          <CellStatus status="Drilling in progress"/>
           </div>
         </div>
  
@@ -130,7 +130,7 @@ export default function Header() {
             sideOffset={8}
             className="w-56 p-4 bg-gray-800 rounded-2xl shadow-xl border border-gray-700 text-white"
           >
-            <p className="font-medium mb-1">John Doe</p>
+            <p className="font-medium mb-1">User</p>
             <p className="text-sm text-gray-400 mb-4">User ID: 12345</p>
             <Button
               variant="outline"
@@ -144,7 +144,7 @@ export default function Header() {
       </header>
 
       {/* Asset Overview */}
-      <section className="px-6 py-4">
+      <section className="pb-6 py-4 mx-6">
         <div className="flex gap-4">
           <div className="flex flex-[0.8] gap-4">
             <DrillingCellColumn id="DC002" />
@@ -155,7 +155,7 @@ export default function Header() {
             />
             <AssetColumn
               title="End Effector"
-              //imageSrc="/robots/abb.png"
+              imageSrc="/smartendeffector.png"
               contentBottom="# SD004"
             />
           </div>
