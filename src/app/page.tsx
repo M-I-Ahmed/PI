@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
 import { Button } from '@/components/ui/button'
 import { User as UserIcon, CheckCircle, Loader2, AlertTriangle } from 'lucide-react'
-import WidgetList from '@/components/ui/widgetlist'
+//import WidgetList from '@/components/ui/widgetlist'
 
 //import MessageLog from '@/components/ui/message-log'
 
@@ -180,7 +180,6 @@ export default function Header() {
               <li><strong className="text-white">Material Stack:</strong> —</li>
             </ul>
         </div>
-        <WidgetList />
 
         {/*Div for 4 tiles */}
         <div className=" flex-[2] grid grid-cols-2 gap-4 mb-4 h-90">

@@ -8,6 +8,11 @@
     "start": "next start",
     "lint": "next lint"
   },
+
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
+
   "dependencies": {
     "@prisma/client": "^6.7.0",
     "@radix-ui/react-popover": "^1.1.13",
