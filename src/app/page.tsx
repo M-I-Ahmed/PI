@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
 import { Button } from '@/components/ui/button'
 import { User as UserIcon, CheckCircle, Loader2, AlertTriangle } from 'lucide-react'
+import WidgetList from '@/components/ui/widgetlist'
+
 //import MessageLog from '@/components/ui/message-log'
 
 const AssetColumn = ({
@@ -51,7 +53,7 @@ const CellStatus = ({ status }: { status: 'ready' | 'drilling' | 'fault' }) => {
     bgClass = 'bg-green-600';
     IconComponent = CheckCircle;
     iconClass = 'text-white';
-  } else if (status === 'Drilling in progress') {
+  } else if (status === 'drilling') {
     bgClass = 'bg-blue-600';
     IconComponent = Loader2;
     iconClass = 'text-white animate-spin';
@@ -103,16 +105,10 @@ export default function Header() {
         <div className='flex-row'>
           <div className='flex items-right justify-right pl-200'>
           <h2 className="text-lg font-semibold pr-5 pt-2 text-white text-center">Cell Status</h2>
-          <CellStatus status="Drilling in progress"/>
+          <CellStatus status="ready"/>
           </div>
         </div>
  
-        {/* <div className="flex-1 min-w-0 bg-gradient-to-b from-[#1e293b] to-[#0f172a] rounded-2xl shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all p-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-white">Cell Status</h2>
-            <CellStatus status='ready' />
-          </div>
-        </div> */}
 
 
         <Popover>
@@ -184,7 +180,7 @@ export default function Header() {
               <li><strong className="text-white">Material Stack:</strong> —</li>
             </ul>
         </div>
-
+        <WidgetList />
 
         {/*Div for 4 tiles */}
         <div className=" flex-[2] grid grid-cols-2 gap-4 mb-4 h-90">
