@@ -6,6 +6,26 @@
 - Some form of data storage is going to be needed in this service
 - An MQTT subscriber is also required to retreive the data being sent between services
 
+# MQTT Topic #
+- Robot 
+- X position
+- Y position 
+- Hole Depth
+- Recipe Number
+- Tool ID
+- Feed Rate
+- Spindle Speed
+
+# DB Required #
+- DB of tools 
+- Holes drilled in last hour - Hole ID with timestamps - maybe a metric up 4% since last hour
+- Hole Success Rate - Hole ID with pass or fail metric
+- No of holes drilled
+
+- Need multiple instances connected to this DB - very simple version
+- Two tables one based on Tool ID
+- Hole table can have Hole ID, Tool ID, Recipe, Feeds and speeds. not retrieving this from the database but from the MQTT instead. 
+
 
 # Data Required - Data that needs to be retrieved from one of the other services
 - Current Robotic Asset
