@@ -6,6 +6,11 @@ import { useRouter } from 'next/navigation'
 import { Popover, PopoverTrigger, PopoverContent } from '@radix-ui/react-popover'
 import { Button } from '@/components/ui/button'
 import { User as UserIcon, CheckCircle, Loader2, AlertTriangle } from 'lucide-react'
+import ToolStatus from '@/components/ui/ToolStatus'
+import HoleCountTile from '@/components/ui/HoleCountTile'
+import HolesLastHour from '@/components/ui/HolesLastHour'
+import CurrentProcessPanel from '@/components/ui/currentProcessPanel'
+import MessageLog from '@/components/ui/message-log'
 //import WidgetList from '@/components/ui/widgetlist'
 
 //import MessageLog from '@/components/ui/message-log'
@@ -168,25 +173,16 @@ export default function Header() {
 
       {/* Row 2 */}
       <section className='flex gap-4 px-6 py-2'>
+        <CurrentProcessPanel />
         {/*Div for current process section */}
-        <div className="flex-[1] bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl p-9 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all">
-            <h2 className="text-lg font-semibold mb-4 text-white">Current Process</h2>
-            <ul className="space-y-1 text-sm text-gray-300">
-              <li><strong className="text-white">Process Type:</strong> —</li>
-              <li><strong className="text-white">Hole ID:</strong> —</li>
-              <li><strong className="text-white">Feed Rate:</strong> —</li>
-              <li><strong className="text-white">Spindle Speed:</strong> —</li>
-              <li><strong className="text-white">Part ID:</strong> —</li>
-              <li><strong className="text-white">Material Stack:</strong> —</li>
-            </ul>
-        </div>
-
+       
+  
         {/*Div for 4 tiles */}
         <div className=" flex-[2] grid grid-cols-2 gap-4 mb-4 h-90">
-            <MetricTile label="Cycles to Next Drill Bit Change" value="3" />
-            <MetricTile label="No. of Cycles Completed" value='100' />
+            <ToolStatus />
+            <HoleCountTile/>
             <MetricTile label="Hole Success Rate (Dial)" value='20' />
-            <MetricTile label="Holes Drilled in Last Hour" value='10' />
+            <HolesLastHour />
         </div>
 
         {/* Div for Cell status indicator */}
@@ -195,6 +191,7 @@ export default function Header() {
 
         {/* Div for message log section*/}
         <div className='flex-[2] flex-col bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl pl-9 pt-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all'>
+          <MessageLog />
             <h2 className="text-lg font-semibold mb-4 text-white">Message Log</h2>
             <MessageCard message='This is a test message.' timestamp='3:55'></MessageCard>
         </div>

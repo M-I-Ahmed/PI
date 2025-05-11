@@ -1,56 +1,50 @@
+// src/components/MessageLog.tsx
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
-import { useMqtt } from '@/lib/usemqtt'
+import { useRef, useState, useEffect } from 'react'
+import { useLiveUpdates } from '@/hooks/useLiveUpdates'
+import { format } from 'date-fns'    // npm i date-fns  (if not already)
 
-type Message = {
-  content: string
-  timestamp: string
+type Msg = {
+  payload: string
+  ts: number
 }
 
 export default function MessageLog() {
-  const { client } = useMqtt()
-  const [messages, setMessages] = useState<Message[]>([])
+  const [log, setLog] = useState<Msg[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  /* push each SSE message onto the log (keep 50) */
+  useLiveUpdates((raw) => {
+    setLog((prev) =>
+      [{ payload: JSON.stringify(raw), ts: raw.timestamp }]
+        .concat(prev)
+        .slice(0, 50)
+    )
+  })
+
+  /* auto‑scroll to newest */
   useEffect(() => {
-    if (!client) return
-
-    const topic = 'events/log'
-
-    const handleMessage = (topic: string, payload: Buffer) => {
-      const msg = payload.toString()
-      const time = new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-
-      setMessages((prev) => [...prev, { content: msg, timestamp: time }])
-    }
-
-    client.subscribe(topic)
-    client.on('message', handleMessage)
-
-    return () => {
-      client.unsubscribe(topic)
-      client.off('message', handleMessage)
-    }
-  }, [client])
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
-  }, [messages])
+    scrollRef.current?.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    })
+  }, [log])
 
   return (
-    <div className="h-[260px] overflow-y-auto space-y-2 p-4 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-cyan-700 text-white" ref={scrollRef}>
-      {messages.length === 0 ? (
+    <div
+      ref={scrollRef}
+      className="h-[260px] overflow-y-auto space-y-2 p-4 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-cyan-700 text-white"
+    >
+      {log.length === 0 ? (
         <p className="text-sm text-gray-400">No messages received yet.</p>
       ) : (
-        messages.map((msg, i) => (
-          <div key={i} className="text-sm">
-            <span className="text-cyan-400 mr-2">[{msg.timestamp}]</span>
-            <span>{msg.content}</span>
+        log.map((m, i) => (
+          <div key={i} className="text-xs leading-snug">
+            <span className="text-cyan-400 mr-2">
+              [{format(m.ts, 'HH:mm:ss')}]
+            </span>
+            {m.payload}
           </div>
         ))
       )}

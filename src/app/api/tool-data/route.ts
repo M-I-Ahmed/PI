@@ -2,10 +2,17 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-  const rows = await prisma.toolData.findMany({
-    orderBy: { id: 'asc' }
-  })
-  return NextResponse.json(rows)
+    const tools = await prisma.toolData.findMany({
+      orderBy: { id: 'asc' }
+    })
+  
+    // add cyclesLeft on the fly
+    const withCycles = tools.map((t) => ({
+      ...t,
+      cyclesLeft: t.inspectionFrequency - t.numberOfUses,
+    }))
+  
+    return NextResponse.json(withCycles)
 }
 
 export async function POST(request: Request) {

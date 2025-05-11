@@ -1,0 +1,43 @@
+// src/components/HoleCountTile.tsx
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useLiveUpdates } from '@/hooks/useLiveUpdates'
+
+export default function HoleCountTile() {
+  const [count, setCount] = useState<number | null>(null)
+
+  /* initial fetch */
+  useEffect(() => {
+    fetch('/api/hole-count')
+      .then((r) => r.json())
+      .then((d) => setCount(d.count ?? null))
+      .catch(() => setCount(null))
+  }, [])
+
+  /* live increment on every drill event */
+  useLiveUpdates(() => {
+    setCount((c) => (c === null ? c : c + 1))
+  })
+
+  return (
+    <MetricShell label="No. of Cycles Completed">
+      {count === null ? '—' : count.toLocaleString('en-US')}
+    </MetricShell>
+  )
+}
+
+function MetricShell({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center text-white font-semibold text-sm text-center p-4 rounded-xl bg-gradient-to-b from-[#1e293b] to-[#0f172a] shadow">
+      <div>{label}</div>
+      <div className="text-cyan-400 text-3xl mt-2">{children}</div>
+    </div>
+  )
+}

@@ -1,81 +1,119 @@
 // src/lib/mqttServer.ts
 import mqtt from 'mqtt'
-import { prisma } from '@/lib/prisma'      // we’ll use this in the next step
+import { prisma } from '@/lib/prisma'
+import { EventEmitter } from 'events'
 
-/* 1️⃣  Connection details
-   - UI is publishing over WebSocket: ws://localhost:9001
-   - The broker usually exposes the *same* topic over plain TCP too (mqtt://localhost:1883).
-   - Use whichever URL reaches your broker from the server side.
-*/
+/* ------------------------------------------------------------------ */
+/* Globals survive hot‑reload                                         */
+/* ------------------------------------------------------------------ */
+const g = global as any
+g.sseEmitter      = g.sseEmitter      || new EventEmitter()
+g.currentToolName = g.currentToolName || null
+g.mqttSub         = g.mqttSub         || null
+g.mqttSubInit     = g.mqttSubInit     || false
+
+export const sseEmitter: EventEmitter = g.sseEmitter
+
+/* ------------------------------------------------------------------ */
+/* MQTT setup                                                         */
+/* ------------------------------------------------------------------ */
 const BROKER_URL = process.env.MQTT_SERVER_URL ?? 'mqtt://localhost:1883'
-const TOPIC      = process.env.MQTT_TOPIC      ?? 'cell/parameters'
+const TOPIC      = process.env.MQTT_TOPIC      ?? 'HoleData'
 
 console.log('[MQTT‑S] mqttServer.ts loaded')
+export const mqttSub = g.mqttSub || mqtt.connect(BROKER_URL)
 
-
-/* 2️⃣  Create ONE persistent client even during hot‑reload */
-export const mqttSub =
-  (global as any).mqttSub || mqtt.connect(BROKER_URL)
-
-if (!(global as any).mqttSubInit) {
+if (!g.mqttSubInit) {
   mqttSub.on('connect', () => {
-    console.log('[MQTT‑S] connected ‑ subscribing to', TOPIC)
+    console.log('[MQTT‑S] connected – subscribing to', TOPIC)
     mqttSub.subscribe(TOPIC)
   })
 
-  mqttSub.on('message', async (_topic, payload) => {
-    // 1️⃣  Parse JSON safely
+  mqttSub.on('message', async (_topic, buf) => {
+    /* 1️⃣ parse JSON */
     let data: any
     try {
-      data = JSON.parse(payload.toString())
+      data = JSON.parse(buf.toString())
     } catch {
-      console.error('[MQTT‑S] bad JSON:', payload.toString())
+      console.error('[MQTT‑S] bad JSON:', buf.toString())
       return
     }
-  
     console.log('[MQTT‑S] incoming:', data)
-  
-    /* Expected payload (adjust if your UI sends different keys)
-       {
-         "tool": "Tool A",
-         "feedRate": 100,
-         "spindleSpeed": 100,
-         "userId": 123,           // optional
-         "cellId": 1,
-         "recipeId": 12
-       }
-    */
-  
-    // 2️⃣  Insert a HoleData row
+
+    /* 2️⃣ current tool */
+    const toolName =
+      typeof data.tool === 'string' ? data.tool.trim() : null
+
+    if (toolName) {
+      g.currentToolName = toolName
+      console.log('[MQTT‑S] currentToolName →', toolName)
+
+      /* FIND or CREATE ToolData row (no @unique needed) */
+      const exists = await prisma.toolData.findFirst({
+        where: { name: toolName },
+        select: { id: true },
+      })
+
+      if (!exists) {
+        await prisma.toolData.create({
+          data: {
+            name: toolName,
+            diameter: 0,
+            length: 0,
+            numberOfUses: 0,
+            inspectionFrequency: 100,
+          },
+        })
+      }
+    }
+
+    /* 3️⃣ insert HoleData */
     try {
       await prisma.holeData.create({
         data: {
-          userId:       data.userId       ?? 0,
-          cellId:       data.cellId       ?? 0,
-          recipeId:     data.recipeId     ?? 0,
-          feedRate:     data.feedRate,
-          spindleSpeed: data.spindleSpeed
-          // timestamp is auto‑now()
-        }
+          userId:       0,
+          cellId:       0,
+          recipeId:     Number(data.recipeNum ?? 0),
+          feedRate:     Number(data.feedRate     ?? 0),
+          spindleSpeed: Number(data.spindleSpeed ?? 0),
+        },
       })
     } catch (err) {
       console.error('[DB] holeData insert failed', err)
       return
     }
-  
-    // 3️⃣  Increment numberOfUses for the tool
-    try {
-      await prisma.toolData.updateMany({
-        where: { name: data.tool },
-        data:  { numberOfUses: { increment: 1 } }
-      })
-    } catch (err) {
-      console.error('[DB] toolData update failed', err)
+
+    /* 4️⃣ increment usage */
+    if (toolName) {
+      try {
+        await prisma.toolData.updateMany({
+          where: { name: toolName },
+          data:  { numberOfUses: { increment: 1 } },
+        })
+      } catch (err) {
+        console.error('[DB] toolData update failed', err)
+      }
     }
+
+    /* 5️⃣ broadcast SSE payload */
+    const outPayload = {
+      toolName,
+      xOffset:       data['X Offset'],
+      yOffset:       data['Y Offset'],
+      depth:         data.holeDepth,
+      recipeNum:     data.recipeNum,
+      process:       data.process,
+      robot:         data.robot,
+      feedRate:      Number(data.feedRate     ?? 0),
+      spindleSpeed:  Number(data.spindleSpeed ?? 0),
+      timestamp:     Date.now(),
+    }
+
+    sseEmitter.emit('update', JSON.stringify(outPayload))
   })
-  
 
   mqttSub.on('error', console.error)
 
-  ;(global as any).mqttSubInit = true
+  g.mqttSubInit = true
+  g.mqttSub     = mqttSub
 }
