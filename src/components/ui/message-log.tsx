@@ -1,59 +1,88 @@
+// src/components/message-log.tsx
 'use client'
+import { useState, useEffect, useRef } from 'react'
+import { useLiveUpdates } from '@/hooks/useLiveUpdates'
 
-import { useEffect, useRef, useState } from 'react'
-import { useMqtt } from '@/lib/usemqtt'
-
-type Message = {
-  content: string
+type LogMessage = {
+  id: number
   timestamp: string
+  content: string
 }
 
 export default function MessageLog() {
-  const { client } = useMqtt()
-  const [messages, setMessages] = useState<Message[]>([])
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<LogMessage[]>([])
+  const messageCountRef = useRef(0)
+  const logContainerRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!client) return
-
-    const topic = 'events/log'
-
-    const handleMessage = (topic: string, payload: Buffer) => {
-      const msg = payload.toString()
-      const time = new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-      })
-
-      setMessages((prev) => [...prev, { content: msg, timestamp: time }])
+  // Use the live updates hook to get real-time messages
+  useLiveUpdates((data, eventType) => {
+    console.log("MessageLog received data:", data, "Event type:", eventType)
+    
+    // Only process messages from the 'log' event type (events/log topic)
+    if (eventType !== 'log') {
+      return;
     }
-
-    client.subscribe(topic)
-    client.on('message', handleMessage)
-
-    return () => {
-      client.unsubscribe(topic)
-      client.off('message', handleMessage)
+    
+    // Convert the data to a displayable string regardless of type
+    let contentStr: string
+    
+    if (typeof data === 'string') {
+      // Already a string, use as is
+      contentStr = data
+    } else if (data === null) {
+      contentStr = 'null'
+    } else if (typeof data === 'object') {
+      // Format objects nicely
+      try {
+        contentStr = JSON.stringify(data, null, 2)
+      } catch (error) {
+        contentStr = String(data)
+      }
+    } else {
+      // For other types (numbers, booleans, etc.)
+      contentStr = String(data)
     }
-  }, [client])
+    
+    // Create a new message entry
+    const newMessage = {
+      id: messageCountRef.current++,
+      timestamp: new Date().toLocaleTimeString(),
+      content: contentStr
+    }
+    
+    // Add to our messages array
+    setMessages(prev => [...prev, newMessage])
+  })
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    if (logContainerRef.current) {
+      logContainerRef.current.scrollTop = logContainerRef.current.scrollHeight
+    }
   }, [messages])
 
   return (
-    <div className="h-[260px] overflow-y-auto space-y-2 p-4 rounded-xl bg-gradient-to-br from-gray-800 to-gray-900 border border-cyan-700 text-white" ref={scrollRef}>
-      {messages.length === 0 ? (
-        <p className="text-sm text-gray-400">No messages received yet.</p>
-      ) : (
-        messages.map((msg, i) => (
-          <div key={i} className="text-sm">
-            <span className="text-cyan-400 mr-2">[{msg.timestamp}]</span>
-            <span>{msg.content}</span>
-          </div>
-        ))
-      )}
+    <div className="flex flex-col rounded-xl  text-white h-full mr-6">
+      <h2 className="text-lg font-semibold mb-4">Message Log</h2>
+      
+      <div 
+        ref={logContainerRef}
+        className="flex-1 overflow-y-auto text-sm font-mono"
+        style={{ maxHeight: '300px' }}
+      >
+        {messages.length === 0 ? (
+          <div className="text-gray-400 italic">No messages yet. Waiting for events...</div>
+        ) : (
+          messages.map(msg => (
+            <div key={msg.id} className="mb-3 border-l-2 border-cyan-500 pl-2">
+              <div className="text-cyan-400 text-xs">[{msg.timestamp}]</div>
+              <pre className="whitespace-pre-wrap text-gray-300 mt-1">
+                {msg.content}
+              </pre>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   )
 }

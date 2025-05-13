@@ -7,9 +7,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Widget {
-  id        Int      @id @default(autoincrement())
-  name      String
-  value     Int
-  createdAt DateTime @default(now())
+/* ---- TABLE 1 : Hole Data ---- */
+model HoleData {
+  id           Int      @id @default(autoincrement()) // Hole ID
+  timestamp    DateTime @default(now())
+  userId       Int
+  cellId       Int
+  recipeId     Int
+  feedRate     Float
+  spindleSpeed Float
+}
+
+/* ---- TABLE 2 : Tool Data ---- */
+model ToolData {
+  id                Int     @id @default(autoincrement()) // Tool ID
+  name              String
+  diameter          Float
+  length            Float
+  numberOfUses      Int
+  inspectionFrequency Int   // how many uses between inspections
 }
