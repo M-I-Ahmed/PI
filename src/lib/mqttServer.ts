@@ -34,8 +34,12 @@ if (!g.mqttSubInit) {
   mqttSub.on('message', async (_topic, buf) => {
     /* ===== 0️⃣  LOG TOPIC (no DB write) =========================== */
     if (_topic === LOG_TOPIC) {
-      const raw = buf.toString()                // text or JSON string
-      sseEmitter.emit('log', raw)               // emit as‑is
+      const raw = buf.toString()  // text or JSON string
+      console.log('[MQTT-S] Log message received:', raw)
+      
+      // Just emit the raw message string directly
+      // Let the client side decide how to handle/display it
+      sseEmitter.emit('log', raw)
       return
     }
   
@@ -122,7 +126,6 @@ if (!g.mqttSubInit) {
     sseEmitter.emit('update', JSON.stringify(outPayload))
   })
   
-
   mqttSub.on('error', console.error)
 
   g.mqttSubInit = true

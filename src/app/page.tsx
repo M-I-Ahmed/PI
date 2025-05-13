@@ -181,8 +181,6 @@ export default function Header() {
 
         {/* Div for message log section*/}
         <div className='flex-[2] flex-col bg-gradient-to-b from-[#1e293b] to-[#0f172a]  text-white rounded-2xl pl-9 pt-6 shadow-lg hover:shadow-xl hover:scale-[1.01] transition-all'>
-
-            <h2 className="text-lg font-semibold mb-4 text-white">Message Log</h2>
             {/* /*<MessageCard message='This is a test message.' timestamp='3:55'></MessageCard>*/}
             <MessageLog />
         </div>

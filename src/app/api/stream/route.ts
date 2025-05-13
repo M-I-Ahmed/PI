@@ -16,23 +16,27 @@ export async function GET() {
       const updateHandler = (data: string) => {
         try {
           if (!isControllerClosed) {
-            controller.enqueue(`data: ${data}\n\n`);
+            console.log('SSE sending update:', data);
+            // Include event type in the SSE message
+            controller.enqueue(`event: update\ndata: ${data}\n\n`);
           }
         } catch (error) {
-          // Controller is probably closed, set flag to prevent future attempts
+          console.error('SSE update error:', error);
           isControllerClosed = true;
           cleanup();
         }
       };
       
       // Handle log events (from events/log topic)
-      const logHandler = (message: string) => {
+      const logHandler = (message: any) => {
         try {
           if (!isControllerClosed) {
-            controller.enqueue(`data: ${message}\n\n`);
+            console.log('SSE sending log message:', message);
+            // Include event type in the SSE message
+            controller.enqueue(`event: log\ndata: ${message}\n\n`);
           }
         } catch (error) {
-          // Controller is probably closed, set flag to prevent future attempts
+          console.error('SSE log error:', error);
           isControllerClosed = true;
           cleanup();
         }
@@ -42,6 +46,7 @@ export async function GET() {
       const cleanup = () => {
         sseEmitter.off('update', updateHandler);
         sseEmitter.off('log', logHandler);
+        console.log('SSE listeners removed');
       };
       
       // Register event listeners
@@ -51,6 +56,7 @@ export async function GET() {
       // Clean up when the client disconnects
       if (controller.signal) {
         controller.signal.addEventListener('abort', () => {
+          console.log('SSE connection aborted');
           isControllerClosed = true;
           cleanup();
         });

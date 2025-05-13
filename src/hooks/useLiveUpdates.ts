@@ -1,78 +1,59 @@
 // src/hooks/useLiveUpdates.ts
 'use client'
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useCallback } from 'react'
 
-export function useLiveUpdates(cb: (data: any) => void) {
-  // Use a ref to track the EventSource instance
-  const eventSourceRef = useRef<EventSource | null>(null);
-  // Track connection status to prevent multiple reconnection attempts
-  const isConnectingRef = useRef<boolean>(false);
+type EventCallback = (data: any, eventType?: string) => void;
 
-  const setupEventSource = useCallback(() => {
-    if (isConnectingRef.current) return;
-    isConnectingRef.current = true;
-
-    // Close any existing connection
-    if (eventSourceRef.current) {
-      console.log('[SSE] Closing existing EventSource connection');
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-
-    // Create new EventSource connection
-    console.log('[SSE] Creating new EventSource connection to /api/stream');
-    try {
-      const es = new EventSource('/api/stream');
-      eventSourceRef.current = es;
-
-      es.onopen = () => {
-        console.log('[SSE] Connection opened');
-        isConnectingRef.current = false;
-      };
-
-      // Handle incoming messages
-      es.onmessage = (evt) => {
-        try {
-          const parsed = JSON.parse(evt.data);
-          cb(parsed);
-        } catch (error) {
-          console.error('[SSE] Error parsing message:', error);
-        }
-      };
-
-      // Handle errors
-      es.onerror = (error) => {
-        console.error('[SSE] EventSource error:', error);
-        // Only attempt to reconnect if we're not already connecting
-        if (!isConnectingRef.current) {
-          isConnectingRef.current = true;
-          es.close();
-          eventSourceRef.current = null;
-          
-          // Try to reconnect after a delay
-          setTimeout(() => {
-            isConnectingRef.current = false;
-            setupEventSource();
-          }, 3000);
-        }
-      };
-    } catch (error) {
-      console.error('[SSE] Error creating EventSource:', error);
-      isConnectingRef.current = false;
-    }
-  }, [cb]);
-
+export function useLiveUpdates(cb: EventCallback) {
   useEffect(() => {
-    setupEventSource();
+    console.log("Setting up EventSource connection")
     
-    // Cleanup function
-    return () => {
-      if (eventSourceRef.current) {
-        console.log('[SSE] Cleaning up EventSource connection');
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
+    // relative URL uses same origin + correct port
+    const es = new EventSource('/api/stream')
+
+    es.onopen = () => {
+      console.log("EventSource connection opened")
+    }
+
+    // General message handler (fallback)
+    es.onmessage = (evt) => {
+      console.log("EventSource received general message:", evt.data)
+      try { 
+        cb(JSON.parse(evt.data), 'message') 
       }
-      isConnectingRef.current = false;
-    };
-  }, [setupEventSource]);
+      catch { 
+        cb(evt.data, 'message') 
+      }
+    }
+
+    // Specific handler for update events
+    es.addEventListener('update', (evt) => {
+      console.log("EventSource received update event:", evt.data)
+      try {
+        cb(JSON.parse(evt.data), 'update')
+      } catch {
+        cb(evt.data, 'update')
+      }
+    })
+
+    // Specific handler for log events
+    es.addEventListener('log', (evt) => {
+      console.log("EventSource received log event:", evt.data)
+      try {
+        cb(evt.data, 'log')
+      } catch {
+        cb(evt.data, 'log')
+      }
+    })
+
+    es.onerror = (err) => {
+      console.error("EventSource error:", err)
+      es.close()
+    }
+    
+    return () => {
+      console.log("Closing EventSource connection")
+      es.close()
+    }
+  }, [cb])
 }
