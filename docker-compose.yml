@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: prisma
+      POSTGRES_PASSWORD: prisma
+      POSTGRES_DB: process_intelligence
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  mosquitto:
+    image: eclipse-mosquitto:2.0.15
+    restart: always
+    ports:
+      - "1883:1883"
+      - "9001:9001"
+    volumes:
+      # your custom config
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      # data persistence volume
+      - mosq_data:/mosquitto/data
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: on-failure
+    ports:
+      - "3002:3000"
+    environment:
+      DATABASE_URL:    postgres://prisma:prisma@postgres:5432/process_intelligence
+      MQTT_SERVER_URL: mqtt://mosquitto:1883
+      MQTT_TOPIC:      HoleData
+      MQTT_LOG_TOPIC:  events/log
+    depends_on:
+      - postgres
+      - mosquitto
+    command: >
+      /bin/sh -c "
+        npx prisma migrate deploy &&
+        npm run start
+      "
+
+volumes:
+  pgdata:
+  mosq_data:

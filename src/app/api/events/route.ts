@@ -2,35 +2,37 @@ import { NextResponse } from 'next/server'
 import { sseEmitter } from '@/lib/mqttServer'
 
 export async function GET(req: Request) {
-  const { signal } = req   // ← will fire when client closes connection
+  const { signal } = req
 
   const stream = new ReadableStream({
     start(controller) {
-      /* send each update */
-      function onMsg(data: string) {
-        controller.enqueue(`data: ${data}\n\n`)
-      }
+      /* handy helper */
+      const push = (type: string, data: string) =>
+        controller.enqueue(`event: ${type}\ndata: ${data}\n\n`)
 
-      /* keep‑alive every 25 s */
+      const onUpdate = (d: string) => push('update', d)
+      const onLog    = (d: string) => push('log',    d)
+
+      sseEmitter.on('update', onUpdate)
+      sseEmitter.on('log',    onLog)
+
+      /* keep‑alive ping */
       const hb = setInterval(() => controller.enqueue(':\n\n'), 25_000)
 
-      sseEmitter.on('update', onMsg)
-
-      /* cleanup when browser tab closes */
       signal.addEventListener('abort', () => {
         clearInterval(hb)
-        sseEmitter.off('update', onMsg)
+        sseEmitter.off('update', onUpdate)
+        sseEmitter.off('log',    onLog)
         controller.close()
       })
     },
   })
 
   return new NextResponse(stream, {
-    status: 200,
     headers: {
-      'Content-Type': 'text/event-stream',
+      'Content-Type':  'text/event-stream',
       'Cache-Control': 'no-cache',
-      Connection: 'keep-alive',
+      Connection:      'keep-alive',
     },
   })
 }

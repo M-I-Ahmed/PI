@@ -19,6 +19,7 @@ export const sseEmitter: EventEmitter = g.sseEmitter
 /* ------------------------------------------------------------------ */
 const BROKER_URL = process.env.MQTT_SERVER_URL ?? 'mqtt://localhost:1883'
 const TOPIC      = process.env.MQTT_TOPIC      ?? 'HoleData'
+const LOG_TOPIC = process.env.MQTT_LOG_TOPIC   ?? 'events/log' 
 
 console.log('[MQTT‑S] mqttServer.ts loaded')
 export const mqttSub = g.mqttSub || mqtt.connect(BROKER_URL)
@@ -27,10 +28,21 @@ if (!g.mqttSubInit) {
   mqttSub.on('connect', () => {
     console.log('[MQTT‑S] connected – subscribing to', TOPIC)
     mqttSub.subscribe(TOPIC)
+    mqttSub.subscribe(LOG_TOPIC)
   })
 
   mqttSub.on('message', async (_topic, buf) => {
-    /* 1️⃣ parse JSON */
+    /* ===== 0️⃣  LOG TOPIC (no DB write) =========================== */
+    if (_topic === LOG_TOPIC) {
+      const raw = buf.toString()                // text or JSON string
+      sseEmitter.emit('log', raw)               // emit as‑is
+      return
+    }
+  
+    /* ===== 1️⃣  DRILL TOPIC  ====================================== */
+    if (_topic !== TOPIC) return          // ignore anything else
+  
+    /* parse JSON safely */
     let data: any
     try {
       data = JSON.parse(buf.toString())
@@ -39,21 +51,19 @@ if (!g.mqttSubInit) {
       return
     }
     console.log('[MQTT‑S] incoming:', data)
-
-    /* 2️⃣ current tool */
-    const toolName =
-      typeof data.tool === 'string' ? data.tool.trim() : null
-
+  
+    /* current tool -------------------------------------------------- */
+    const toolName = typeof data.tool === 'string' ? data.tool.trim() : null
+  
     if (toolName) {
       g.currentToolName = toolName
       console.log('[MQTT‑S] currentToolName →', toolName)
-
-      /* FIND or CREATE ToolData row (no @unique needed) */
+  
+      /* ensure tool row exists (find‑or‑create) */
       const exists = await prisma.toolData.findFirst({
         where: { name: toolName },
         select: { id: true },
       })
-
       if (!exists) {
         await prisma.toolData.create({
           data: {
@@ -66,8 +76,8 @@ if (!g.mqttSubInit) {
         })
       }
     }
-
-    /* 3️⃣ insert HoleData */
+  
+    /* insert HoleData ---------------------------------------------- */
     try {
       await prisma.holeData.create({
         data: {
@@ -82,8 +92,8 @@ if (!g.mqttSubInit) {
       console.error('[DB] holeData insert failed', err)
       return
     }
-
-    /* 4️⃣ increment usage */
+  
+    /* increment usage ---------------------------------------------- */
     if (toolName) {
       try {
         await prisma.toolData.updateMany({
@@ -94,8 +104,8 @@ if (!g.mqttSubInit) {
         console.error('[DB] toolData update failed', err)
       }
     }
-
-    /* 5️⃣ broadcast SSE payload */
+  
+    /* broadcast SSE payload (update channel) ------------------------ */
     const outPayload = {
       toolName,
       xOffset:       data['X Offset'],
@@ -108,9 +118,10 @@ if (!g.mqttSubInit) {
       spindleSpeed:  Number(data.spindleSpeed ?? 0),
       timestamp:     Date.now(),
     }
-
+  
     sseEmitter.emit('update', JSON.stringify(outPayload))
   })
+  
 
   mqttSub.on('error', console.error)
 

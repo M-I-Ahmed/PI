@@ -1,22 +1,21 @@
+// src/app/api/tool-data/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
-    const tools = await prisma.toolData.findMany({
-      orderBy: { id: 'asc' }
-    })
-  
-    // add cyclesLeft on the fly
-    const withCycles = tools.map((t) => ({
+  // fetch the rows; TS knows the return type from Prisma Client
+  const tools = await prisma.toolData.findMany()
+
+  // infer the element type
+  type ToolRow = typeof tools[number]
+
+  // explicitly type the map callback parameter so there's no implicit any
+  const withCycles: Array<ToolRow & { cyclesLeft: number }> = tools.map(
+    (t: ToolRow) => ({
       ...t,
       cyclesLeft: t.inspectionFrequency - t.numberOfUses,
-    }))
-  
-    return NextResponse.json(withCycles)
-}
+    }),
+  )
 
-export async function POST(request: Request) {
-  const data = await request.json()
-  const row  = await prisma.toolData.create({ data })
-  return NextResponse.json(row, { status: 201 })
+  return NextResponse.json(withCycles)
 }
